@@ -12,6 +12,9 @@ router.get('/', (req, res) => {
     if (orden === 'estamina') {
         resultado.sort((a, b) => b.incremento_estamina - a.incremento_estamina);
     }
+    else{
+        return res.status(404).json({ error: 'Mala URL' });
+    }
 
     res.status(200).json(resultado);
 });
