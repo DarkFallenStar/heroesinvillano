@@ -14,7 +14,8 @@ router.get('/', (req, res) => {
     }
 
     if (tipo) {
-        resultado = resultado.filter(p => p.tipo.toLowerCase() === tipo.toLowerCase());
+        const n = tipo.toLowerCase();
+        resultado = resultado.filter(p => p.tipo.toLowerCase().includes(n));
     }
 
     res.status(200).json(resultado);
@@ -67,6 +68,69 @@ router.get('/:id/habilidades', (req, res) => {
     res.status(200).json(suyas);
 
 });
+
+router.delete('/:id', (req, res) => {
+
+    const id = Number(req.params.id);
+    const personaje = personajes.find(p => p.id === id);
+
+    if (!personaje) {
+        return res.status(404).json({ error: 'personaje no encontrado' });
+    }
+
+    personajes.splice(personaje, 1)
+
+    res.status(204).send(personajes);
+});
+/*
+router.get('/', (req, res) => {
+
+    const { nombre, tipo } = req.query;
+
+    let resultado = personajes;
+
+    if (nombre) {
+        resultado = resultado.filter(
+            p => p.nombre && p.nombre.toLowerCase() === nombre.toLowerCase()
+        );
+    }
+
+    if (tipo) {
+        resultado = resultado.filter(
+            p => p.tipo && p.tipo.toLowerCase() === tipo.toLowerCase()
+        );
+    }
+
+    if (resultado.length === 0) {
+        return res.status(404).json({ error: 'personaje no encontrado' });
+    }
+
+    res.status(200).json(resultado);
+});
+
+/*router.get('/', (req, res) => {
+
+    const nombre = req.query.nombre;
+    const personaje = personajes.find(p => p.nombre.toLowerCase() === nombre.toLowerCase());
+
+    if (!personaje) {
+        return res.status(404).json({ error: 'personaje no encontrado' });
+    }
+
+    res.status(200).json(personaje);
+});
+
+router.get('/amo', (req, res) => {
+
+    const tipo = req.query.tipo;
+    const personaje = personajes.filter(p => p.tipo.toLowerCase() === tipo.toLowerCase());
+
+    if (!personaje) {
+        return res.status(404).json({ error: 'personaje no encontrado' });
+    }
+
+    res.status(200).json(personaje);
+});*/
 
 // Implementa router.put('/:id', ...) y router.delete('/:id', ...).
 

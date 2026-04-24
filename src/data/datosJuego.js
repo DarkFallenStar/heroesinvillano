@@ -105,6 +105,14 @@ const personajes = [
         ataque: 65, defensa: 40, estamina: 90,
         habilidades: [1,3,4],
     },
+    {
+        id: 7,
+        nombre: 'He',
+        tipo: 'Exhibicionista',
+        descripcion: 'Es un exhicibionista malo en la lucha.',
+        ataque: 10, defensa: 10, estamina: 30,
+        habilidades: [1,3],
+    },
     // Agrega al menos 4 personajes más.
 ];
 
