@@ -11,7 +11,7 @@ module.exports = (sequelize, DataTypes) => {
      */
     // models/personaje.js
     static associate(models) {
-      Personaje.belongsTo(models.Perfil, { foreignKey: 'perfilId' });
+      Personaje.belongsTo(models.Usuario, { foreignKey: 'usuarioId' });
       Personaje.belongsToMany(models.Habilidad, {
         through: models.PersonajeHabilidad,
         foreignKey: 'personajeId',
@@ -26,7 +26,8 @@ module.exports = (sequelize, DataTypes) => {
     ataque: DataTypes.INTEGER,
     defensa: DataTypes.INTEGER,
     estamina: DataTypes.INTEGER,
-    perfilId: DataTypes.INTEGER
+    perfilId: DataTypes.INTEGER,
+
   }, {
     sequelize,
     modelName: 'Personaje',
