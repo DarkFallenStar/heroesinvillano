@@ -1,137 +1,125 @@
+'use strict';
 const express = require('express');
-const { personajes, habilidades } = require('../data/datosJuego');
+const { Personaje, Habilidades } = require('../../models'); // ✅ Mayúsculas, así se llaman los modelos
 const router = express.Router();
 
 // GET /api/personajes?nombre=&tipo=
-router.get('/', (req, res) => {
-
+router.get('/', async (req, res) => {
+  try {
     const { nombre, tipo } = req.query;
-    let resultado = personajes;
 
-    if (nombre) {
-        const n = nombre.toLowerCase();
-        resultado = resultado.filter(p => p.nombre.toLowerCase().includes(n));
-    }
+    // Construimos el filtro dinámicamente
+    const where = {};
+    if (nombre) where.nombre = nombre;
+    if (tipo)   where.tipo   = tipo;
 
-    if (tipo) {
-        const n = tipo.toLowerCase();
-        resultado = resultado.filter(p => p.tipo.toLowerCase().includes(n));
-    }
+    const personajes = await Personaje.findAll({ where });
 
-    res.status(200).json(resultado);
+    res.status(200).json(personajes);
+
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 // GET /api/personajes/:id
-router.get('/:id', (req, res) => {
-
-    const id = Number(req.params.id);
-    const personaje = personajes.find(p => p.id === id);
+router.get('/:id', async (req, res) => {
+  try {
+    const personaje = await Personaje.findByPk(req.params.id);
 
     if (!personaje) {
-        return res.status(404).json({ error: 'Personaje no encontrado' });
+      return res.status(404).json({ error: 'Personaje no encontrado' });
     }
 
     res.status(200).json(personaje);
-});
 
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
 
 // POST /api/personajes
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
+  try {
+    const { nombre, tipo, descripcion, ataque, defensa, stamina } = req.body;
 
-    const nuevo = { id: personajes.length + 1, ...req.body,
-         nombre: req.body.nombre,
-         tipo: req.body.tipo,
-         descripcion: req.body.descripcion,
-         ataque: Number(req.body.ataque),
-         defensa: Number(req.body.defensa),
-         estamina: Number(req.body.estamina),
-         habilidades: req.body.habilidades.split(",").map(h => Number(h))
-     };
-    personajes.push(nuevo);
+    const nuevo = await Personaje.create({
+      nombre,
+      tipo,
+      descripcion,
+      ataque:  Number(ataque),
+      defensa: Number(defensa),
+      stamina: Number(stamina)
+    });
+
     res.status(201).json(nuevo);
+
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
-
-// GET /api/personajes/:id/habilidades — ruta jerárquica
-
-router.get('/:id/habilidades', (req, res) => {
-
-    const id = Number(req.params.id);
-    const personaje = personajes.find(p => p.id === id);
+// PUT /api/personajes/:id
+router.put('/:id', async (req, res) => {
+  try {
+    const personaje = await Personaje.findByPk(req.params.id);
 
     if (!personaje) {
-        return res.status(404).json({ error: 'Personaje no encontrado' });
+      return res.status(404).json({ error: 'Personaje no encontrado' });
     }
 
-    const suyas = habilidades.filter(h => personaje.habilidades.includes(h.id));
+    const { nombre, tipo, descripcion, ataque, defensa, stamina } = req.body;
 
-    res.status(200).json(suyas);
-
-});
-
-router.delete('/:id', (req, res) => {
-
-    const id = Number(req.params.id);
-    const personaje = personajes.find(p => p.id === id);
-
-    if (!personaje) {
-        return res.status(404).json({ error: 'personaje no encontrado' });
-    }
-
-    personajes.splice(personaje, 1)
-
-    res.status(204).send(personajes);
-});
-/*
-router.get('/', (req, res) => {
-
-    const { nombre, tipo } = req.query;
-
-    let resultado = personajes;
-
-    if (nombre) {
-        resultado = resultado.filter(
-            p => p.nombre && p.nombre.toLowerCase() === nombre.toLowerCase()
-        );
-    }
-
-    if (tipo) {
-        resultado = resultado.filter(
-            p => p.tipo && p.tipo.toLowerCase() === tipo.toLowerCase()
-        );
-    }
-
-    if (resultado.length === 0) {
-        return res.status(404).json({ error: 'personaje no encontrado' });
-    }
-
-    res.status(200).json(resultado);
-});
-
-/*router.get('/', (req, res) => {
-
-    const nombre = req.query.nombre;
-    const personaje = personajes.find(p => p.nombre.toLowerCase() === nombre.toLowerCase());
-
-    if (!personaje) {
-        return res.status(404).json({ error: 'personaje no encontrado' });
-    }
+    await personaje.update({
+      nombre,
+      tipo,
+      descripcion,
+      ataque:  Number(ataque),
+      defensa: Number(defensa),
+      stamina: Number(stamina)
+    });
 
     res.status(200).json(personaje);
+
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
-router.get('/amo', (req, res) => {
-
-    const tipo = req.query.tipo;
-    const personaje = personajes.filter(p => p.tipo.toLowerCase() === tipo.toLowerCase());
+// DELETE /api/personajes/:id
+router.delete('/:id', async (req, res) => {
+  try {
+    const personaje = await Personaje.findByPk(req.params.id);
 
     if (!personaje) {
-        return res.status(404).json({ error: 'personaje no encontrado' });
+      return res.status(404).json({ error: 'Personaje no encontrado' });
     }
 
-    res.status(200).json(personaje);
-});*/
+    await personaje.destroy(); // ✅ destroy() elimina el registro de la BD
 
-// Implementa router.put('/:id', ...) y router.delete('/:id', ...).
+    res.status(204).send();
+
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// GET /api/personajes/:id/habilidades
+router.get('/:id/habilidades', async (req, res) => {
+  try {
+    const personaje = await Personaje.findByPk(req.params.id, {
+      include: [{ model: Habilidades }] // ✅ Sequelize hace el JOIN automáticamente
+    });
+
+    if (!personaje) {
+      return res.status(404).json({ error: 'Personaje no encontrado' });
+    }
+
+    res.status(200).json(personaje.Habilidades); // ✅ accedemos a las habilidades del personaje
+
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
 
 module.exports = router;

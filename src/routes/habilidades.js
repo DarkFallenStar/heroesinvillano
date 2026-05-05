@@ -1,51 +1,126 @@
-// GET /api/habilidades?orden=estamina
+'use strict';
 const express = require('express');
-const { personajes, habilidades } = require('../data/datosJuego');
+const { Habilidades, Personaje } = require('../../models'); // ✅ desde models de Sequelize
 const router = express.Router();
 
-
-router.get('/', (req, res) => {
-
+// GET /api/habilidades?orden=estamina
+router.get('/', async (req, res) => {
+  try {
     const { orden } = req.query;
-    let resultado = [...habilidades];
 
-    if (orden === 'estamina') {
-        resultado.sort((a, b) => b.incremento_estamina - a.incremento_estamina);
-    }
-    else{
-        return res.status(404).json({ error: 'Mala URL' });
-    }
+    // Campos válidos para ordenar
+    const camposValidos = ['incATK', 'incDEF', 'incSTM'];
 
-    res.status(200).json(resultado);
+    // Construimos el order dinámicamente
+    const order = [];
+    if (orden === 'ataque')  order.push(['incATK', 'DESC']);
+    if (orden === 'defensa') order.push(['incDEF', 'DESC']);
+    if (orden === 'estamina') order.push(['incSTM', 'DESC']);
+
+    const habilidades = await Habilidades.findAll({ order });
+
+    res.status(200).json(habilidades);
+
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
-router.get('/:id', (req, res) => {
 
-    const id = Number(req.params.id);
-    const habilidad = habilidades.find(p => p.id === id);
+// GET /api/habilidades/:id
+router.get('/:id', async (req, res) => {
+  try {
+    const habilidad = await Habilidades.findByPk(req.params.id);
 
     if (!habilidad) {
-        return res.status(404).json({ error: 'habilidad no encontrado' });
+      return res.status(404).json({ error: 'Habilidad no encontrada' });
     }
 
     res.status(200).json(habilidad);
+
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
-router.put('/:id', (req, res) => {
+// POST /api/habilidades
+router.post('/', async (req, res) => {
+  try {
+    const { nombre, descripcion, incATK, incDEF, incSTM } = req.body;
 
-    const id = Number(req.params.id);
-    const habilidad = habilidades.find(p => p.id === id);
+    const nueva = await Habilidades.create({
+      nombre,
+      descripcion,
+      incATK: Number(incATK),
+      incDEF: Number(incDEF),
+      incSTM: Number(incSTM)
+    });
+
+    res.status(201).json(nueva);
+
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.put('/:id', async (req, res) => {
+  try {
+    const habilidad = await Habilidades.findByPk(req.params.id);
 
     if (!habilidad) {
-        return res.status(404).json({ error: 'habilidad no encontrado' });
+      return res.status(404).json({ error: 'Habilidad no encontrada' });
     }
-    
-    habilidad.nombre = req.body.nombre
-    habilidad.descripcion = req.body.descripcion
-    habilidad.incremento_ataque = Number(req.body.incremento_ataque)
-    habilidad.incremento_defensa = Number(req.body.incremento_defensa)
-    habilidad.incremento_estamina = -Number(req.body.incremento_estamina)
+
+    const { nombre, descripcion, incATK, incDEF, incSTM } = req.body;
+
+    await habilidad.update({
+      nombre,
+      descripcion,
+      incATK: Number(incATK),
+      incDEF: Number(incDEF),
+      incSTM: Number(incSTM)  
+    });
 
     res.status(200).json(habilidad);
+
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+
+router.delete('/:id', async (req, res) => {
+  try {
+    const habilidad = await Habilidades.findByPk(req.params.id);
+
+    if (!habilidad) {
+      return res.status(404).json({ error: 'Habilidad no encontrada' });
+    }
+
+    await habilidad.destroy();
+
+    res.status(204).send();
+
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+
+router.get('/:id/personajes', async (req, res) => {
+  try {
+    const habilidad = await Habilidades.findByPk(req.params.id, {
+      include: [{ model: Personaje }] 
+    });
+
+    if (!habilidad) {
+      return res.status(404).json({ error: 'Habilidad no encontrada' });
+    }
+
+    res.status(200).json(habilidad.Personajes);
+
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 module.exports = router;
