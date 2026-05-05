@@ -9,9 +9,12 @@ module.exports = (sequelize, DataTypes) => {
      * This method is not a part of Sequelize lifecycle.
      * The `models/index` file will call this method automatically.
      */
+    // models/perfil.js
     static associate(models) {
-      // define association here
+      Perfil.belongsTo(models.Usuario, { foreignKey: 'usuarioId' });
+      Perfil.hasMany(models.Personaje, { foreignKey: 'perfilId' });
     }
+
   }
   Perfil.init({
     biografia: DataTypes.TEXT,
