@@ -1,153 +1,101 @@
-// src/routes/personajes.js
+'use strict';
 const express = require('express');
-const { Personaje, Habilidad } = require('../../models');
- 
+const { Personaje, Habilidad, PersonajeHabilidad } = require('../../models');
 const router = express.Router();
- 
+
+// GET /api/personajes
 router.get('/', async (req, res, next) => {
   try {
     const personajes = await Personaje.findAll({
-      include: [{ model: Habilidad, through: { attributes: ['nivel'] } }],
+      include: [{
+        model: Habilidad,
+        through: {
+          model: PersonajeHabilidad, // ✅ especifica el modelo explícitamente
+          attributes: ['nivel']
+        }
+      }]
     });
     res.json(personajes);
-  } catch (err) {
-    next(err);
-  }
-});
- 
-module.exports = router;
-
-
-/*router.get('/', (req, res) => {
-
-    const { nombre, tipo } = req.query;
-    let resultado = personajes;
-
-    if (nombre) {
-        const n = nombre.toLowerCase();
-        resultado = resultado.filter(p => p.nombre.toLowerCase().includes(n));
-    }
-
-    if (tipo) {
-        const n = tipo.toLowerCase();
-        resultado = resultado.filter(p => p.tipo.toLowerCase().includes(n));
-    }
-
-    res.status(200).json(resultado);
+  } catch (err) { next(err); }
 });
 
 
 // GET /api/personajes/:id
-router.get('/:id', (req, res) => {
-
-    const id = Number(req.params.id);
-    const personaje = personajes.find(p => p.id === id);
-
-    if (!personaje) {
-        return res.status(404).json({ error: 'Personaje no encontrado' });
-    }
-
-    res.status(200).json(personaje);
+router.get('/:id', async (req, res, next) => {
+  try {
+    const personaje = await Personaje.findByPk(req.params.id, {
+      include: [{
+        model: Habilidad,
+        through: {
+          model: PersonajeHabilidad, // ✅ especifica el modelo explícitamente
+          attributes: ['nivel']
+        }
+      }]
+    });
+    if (!personaje) return res.status(404).json({ error: 'Personaje no encontrado' });
+    res.json(personaje);
+  } catch (err) { next(err); }
 });
-
 
 // POST /api/personajes
-router.post('/', (req, res) => {
-
-    const nuevo = { id: personajes.length + 1, ...req.body,
-         nombre: req.body.nombre,
-         tipo: req.body.tipo,
-         descripcion: req.body.descripcion,
-         ataque: Number(req.body.ataque),
-         defensa: Number(req.body.defensa),
-         estamina: Number(req.body.estamina),
-         habilidades: req.body.habilidades.split(",").map(h => Number(h))
-     };
-    personajes.push(nuevo);
+router.post('/', async (req, res, next) => {
+  try {
+    const { nombre, descripcion, ataque, defensa, estamina, perfilId } = req.body;
+    const nuevo = await Personaje.create({
+      nombre, descripcion,
+      ataque:   Number(ataque),
+      defensa:  Number(defensa),
+      estamina: Number(estamina),
+      perfilId
+    });
     res.status(201).json(nuevo);
+  } catch (err) { next(err); }
 });
 
-
-// GET /api/personajes/:id/habilidades — ruta jerárquica
-
-router.get('/:id/habilidades', (req, res) => {
-
-    const id = Number(req.params.id);
-    const personaje = personajes.find(p => p.id === id);
-
-    if (!personaje) {
-        return res.status(404).json({ error: 'Personaje no encontrado' });
-    }
-
-    const suyas = habilidades.filter(h => personaje.habilidades.includes(h.id));
-
-    res.status(200).json(suyas);
-
+// PUT /api/personajes/:id
+router.put('/:id', async (req, res, next) => {
+  try {
+    const personaje = await Personaje.findByPk(req.params.id);
+    if (!personaje) return res.status(404).json({ error: 'Personaje no encontrado' });
+    const { nombre, descripcion, ataque, defensa, estamina } = req.body;
+    await personaje.update({ nombre, descripcion,
+      ataque: Number(ataque), defensa: Number(defensa), estamina: Number(estamina)
+    });
+    res.json(personaje);
+  } catch (err) { next(err); }
 });
 
-router.delete('/:id', (req, res) => {
-
-    const id = Number(req.params.id);
-    const personaje = personajes.find(p => p.id === id);
-
-    if (!personaje) {
-        return res.status(404).json({ error: 'personaje no encontrado' });
-    }
-
-    personajes.splice(personaje, 1)
-
-    res.status(204).send(personajes);
-});
-/*
-router.get('/', (req, res) => {
-
-    const { nombre, tipo } = req.query;
-
-    let resultado = personajes;
-
-    if (nombre) {
-        resultado = resultado.filter(
-            p => p.nombre && p.nombre.toLowerCase() === nombre.toLowerCase()
-        );
-    }
-
-    if (tipo) {
-        resultado = resultado.filter(
-            p => p.tipo && p.tipo.toLowerCase() === tipo.toLowerCase()
-        );
-    }
-
-    if (resultado.length === 0) {
-        return res.status(404).json({ error: 'personaje no encontrado' });
-    }
-
-    res.status(200).json(resultado);
+// DELETE /api/personajes/:id
+router.delete('/:id', async (req, res, next) => {
+  try {
+    const personaje = await Personaje.findByPk(req.params.id);
+    if (!personaje) return res.status(404).json({ error: 'Personaje no encontrado' });
+    await personaje.destroy();
+    res.status(204).send();
+  } catch (err) { next(err); }
 });
 
-/*router.get('/', (req, res) => {
-
-    const nombre = req.query.nombre;
-    const personaje = personajes.find(p => p.nombre.toLowerCase() === nombre.toLowerCase());
-
-    if (!personaje) {
-        return res.status(404).json({ error: 'personaje no encontrado' });
-    }
-
-    res.status(200).json(personaje);
+// POST /api/personajes/:id/habilidades
+router.post('/:id/habilidades', async (req, res, next) => {
+  try {
+    const personaje = await Personaje.findByPk(req.params.id);
+    if (!personaje) return res.status(404).json({ error: 'Personaje no encontrado' });
+    const { habilidadId, nivel } = req.body;
+    await PersonajeHabilidad.create({ personajeId: personaje.id, habilidadId, nivel });
+    res.status(201).json({ mensaje: 'Habilidad agregada correctamente' });
+  } catch (err) { next(err); }
 });
 
-router.get('/amo', (req, res) => {
+// DELETE /api/personajes/:idP/habilidades/:idH
+router.delete('/:idP/habilidades/:idH', async (req, res, next) => {
+  try {
+    const relacion = await PersonajeHabilidad.findOne({
+      where: { personajeId: req.params.idP, habilidadId: req.params.idH }
+    });
+    if (!relacion) return res.status(404).json({ error: 'Relación no encontrada' });
+    await relacion.destroy();
+    res.status(204).send();
+  } catch (err) { next(err); }
+});
 
-    const tipo = req.query.tipo;
-    const personaje = personajes.filter(p => p.tipo.toLowerCase() === tipo.toLowerCase());
-
-    if (!personaje) {
-        return res.status(404).json({ error: 'personaje no encontrado' });
-    }
-
-    res.status(200).json(personaje);
-    module.exports = router;
-});*/
-
-// Implementa router.put('/:id', ...) y router.delete('/:id', ...).
-
+module.exports = router;

@@ -1,51 +1,69 @@
-// GET /api/habilidades?orden=estamina
+'use strict';
 const express = require('express');
-const { personajes, habilidades } = require('../data/datosJuego');
+const { Habilidad } = require('../../models');
 const router = express.Router();
 
-
-router.get('/', (req, res) => {
-
+// GET /api/habilidades?orden=ataque|defensa|estamina
+router.get('/', async (req, res, next) => {
+  try {
     const { orden } = req.query;
-    let resultado = [...habilidades];
+    const order = [];
+    if (orden === 'ataque')   order.push(['incremento_ataque',   'DESC']);
+    if (orden === 'defensa')  order.push(['incremento_defensa',  'DESC']);
+    if (orden === 'estamina') order.push(['incremento_estamina', 'DESC']);
 
-    if (orden === 'estamina') {
-        resultado.sort((a, b) => b.incremento_estamina - a.incremento_estamina);
-    }
-    else{
-        return res.status(404).json({ error: 'Mala URL' });
-    }
-
-    res.status(200).json(resultado);
-});
-router.get('/:id', (req, res) => {
-
-    const id = Number(req.params.id);
-    const habilidad = habilidades.find(p => p.id === id);
-
-    if (!habilidad) {
-        return res.status(404).json({ error: 'habilidad no encontrado' });
-    }
-
-    res.status(200).json(habilidad);
+    const habilidades = await Habilidad.findAll({ order });
+    res.json(habilidades);
+  } catch (err) { next(err); }
 });
 
-router.put('/:id', (req, res) => {
+// GET /api/habilidades/:id
+router.get('/:id', async (req, res, next) => {
+  try {
+    const habilidad = await Habilidad.findByPk(req.params.id);
+    if (!habilidad) return res.status(404).json({ error: 'Habilidad no encontrada' });
+    res.json(habilidad);
+  } catch (err) { next(err); }
+});
 
-    const id = Number(req.params.id);
-    const habilidad = habilidades.find(p => p.id === id);
+// POST /api/habilidades
+router.post('/', async (req, res, next) => {
+  try {
+    const { nombre, descripcion, incremento_ataque, incremento_defensa, incremento_estamina } = req.body;
+    const nueva = await Habilidad.create({
+      nombre, descripcion,
+      incremento_ataque:   Number(incremento_ataque),
+      incremento_defensa:  Number(incremento_defensa),
+      incremento_estamina: Number(incremento_estamina)
+    });
+    res.status(201).json(nueva);
+  } catch (err) { next(err); }
+});
 
-    if (!habilidad) {
-        return res.status(404).json({ error: 'habilidad no encontrado' });
-    }
-    
-    habilidad.nombre = req.body.nombre
-    habilidad.descripcion = req.body.descripcion
-    habilidad.incremento_ataque = Number(req.body.incremento_ataque)
-    habilidad.incremento_defensa = Number(req.body.incremento_defensa)
-    habilidad.incremento_estamina = -Number(req.body.incremento_estamina)
+// PUT /api/habilidades/:id
+router.put('/:id', async (req, res, next) => {
+  try {
+    const habilidad = await Habilidad.findByPk(req.params.id);
+    if (!habilidad) return res.status(404).json({ error: 'Habilidad no encontrada' });
+    const { nombre, descripcion, incremento_ataque, incremento_defensa, incremento_estamina } = req.body;
+    await habilidad.update({
+      nombre, descripcion,
+      incremento_ataque:   Number(incremento_ataque),
+      incremento_defensa:  Number(incremento_defensa),
+      incremento_estamina: Number(incremento_estamina)
+    });
+    res.json(habilidad);
+  } catch (err) { next(err); }
+});
 
-    res.status(200).json(habilidad);
+// DELETE /api/habilidades/:id
+router.delete('/:id', async (req, res, next) => {
+  try {
+    const habilidad = await Habilidad.findByPk(req.params.id);
+    if (!habilidad) return res.status(404).json({ error: 'Habilidad no encontrada' });
+    await habilidad.destroy();
+    res.status(204).send();
+  } catch (err) { next(err); }
 });
 
 module.exports = router;

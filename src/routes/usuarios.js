@@ -1,18 +1,18 @@
+'use strict';
 const express = require('express');
-const { Personaje, Habilidad } = require('../../models');
- 
+const { Usuario, Perfil, Personaje } = require('../../models');
 const router = express.Router();
- 
-router.get('/', async (req, res, next) => {
+
+// GET /api/usuarios/:id/personajes
+router.get('/:id/personajes', async (req, res, next) => {
   try {
-    const usuarios = await usuario.findAll({
-      include: [{ model: Personaje, through: { attributes: ['nombre','tipo', 'ataque', 'defensa', 'estamina'] } }],
+    const usuario = await Usuario.findByPk(req.params.id, {
+      include: [{ model: Perfil, include: [{ model: Personaje }] }]
     });
-    res.json(usuarios);
-  } catch (err) {
-    return res.status(500).json({ error: 'aaaaaaaaaaaaaaaa' });
-    next(err);
-  }
+    if (!usuario) return res.status(404).json({ error: 'Usuario no encontrado' });
+    const personajes = usuario.Perfil?.Personajes || [];
+    res.json(personajes);
+  } catch (err) { next(err); }
 });
- 
+
 module.exports = router;
