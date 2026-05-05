@@ -1,9 +1,24 @@
+// src/routes/personajes.js
 const express = require('express');
-const { personajes, habilidades } = require('../data/datosJuego');
+const { Personaje, Habilidad } = require('../../models');
+ 
 const router = express.Router();
+ 
+router.get('/', async (req, res, next) => {
+  try {
+    const personajes = await Personaje.findAll({
+      include: [{ model: Habilidad, through: { attributes: ['nivel'] } }],
+    });
+    res.json(personajes);
+  } catch (err) {
+    next(err);
+  }
+});
+ 
+module.exports = router;
 
-// GET /api/personajes?nombre=&tipo=
-router.get('/', (req, res) => {
+
+/*router.get('/', (req, res) => {
 
     const { nombre, tipo } = req.query;
     let resultado = personajes;
@@ -20,6 +35,7 @@ router.get('/', (req, res) => {
 
     res.status(200).json(resultado);
 });
+
 
 // GET /api/personajes/:id
 router.get('/:id', (req, res) => {
@@ -130,8 +146,8 @@ router.get('/amo', (req, res) => {
     }
 
     res.status(200).json(personaje);
+    module.exports = router;
 });*/
 
 // Implementa router.put('/:id', ...) y router.delete('/:id', ...).
 
-module.exports = router;
