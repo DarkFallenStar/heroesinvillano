@@ -5,12 +5,14 @@ const { sequelize } = require('../models');
 const personajesRouter  = require('./routes/personajes');
 const usuariosRouter    = require('./routes/usuarios');
 const habilidadesRouter = require('./routes/habilidades');
-
+const requestLogger = require('./middlewares/requestLogger');
+const sanitizeIds = require('./middlewares/sanitizeIds');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
-
+app.use(requestLogger);
+app.use(sanitizeIds)
 app.use('/api/personajes',  personajesRouter);
 app.use('/api/usuarios',    usuariosRouter);
 app.use('/api/habilidades', habilidadesRouter);
