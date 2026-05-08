@@ -31,4 +31,4 @@ res.json = (body) => originalJson(stripIdSuffixes(body));
 
 next();
 
-};
+}

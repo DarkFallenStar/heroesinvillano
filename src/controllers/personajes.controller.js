@@ -13,7 +13,9 @@ exports.list = async (req, res, next) => {
         }
       }]
     });
-    res.json(personajes);
+     const plain = JSON.parse(JSON.stringify(personajes));
+
+    res.json(plain);
   } catch (err) { next(err); }
 };
 
@@ -29,6 +31,9 @@ exports.show = async (req, res, next) => {
         }
       }]
     });
+    const plain = JSON.parse(JSON.stringify(personaje));
+
+    res.json(plain);
     if (!personaje) return res.status(404).json({ error: 'Personaje no encontrado' });
     res.json(personaje);
   } catch (err) { next(err); }
